@@ -1,0 +1,98 @@
+# Задание 1: Для датафрейма log из материалов занятия создайте столбец source_type по правилам:
+# если источник traffic_source равен Yandex или Google, то в source_type ставится organic;
+# для источников paid и email из России ставим ad;
+# для источников paid и email не из России ставим other;
+# все остальные варианты берём из traffic_source без изменений.
+
+import pandas as pd
+log=pd.read_csv('visit_log.csv', sep=';')
+log.head()
+
+log.loc[(log.traffic_source == 'yandex') | (log.traffic_source == 'google'), 'source_type'] = 'organic'
+log.loc[((log.traffic_source == 'paid') | (log.traffic_source == 'email')) & (log.region=='Russia'), 'source_type'] = 'ad'
+log.loc[((log.traffic_source == 'paid') | (log.traffic_source == 'email')) & (log.region!='Russia'), 'source_type'] = 'other'
+log.loc[log.source_type.isnull(), 'source_type']=log['traffic_source']
+log.head(5)
+
+
+# Задание 2: В файле URLs.txt содержатся URL страниц новостного сайта. Вам нужно отфильтровать его по адресам страниц с текстами новостей. Известно, что шаблон страницы новостей имеет внутри URL конструкцию: /, затем 8 цифр, затем дефис. Выполните действия:
+
+# а) Прочитайте содержимое файла с датафрейм. б) Отфильтруйте страницы с текстом новостей, используя метод str.contains и регулярное выражение в соответствие с заданным шаблоном.
+
+# а)
+
+import pandas as pd
+import re
+urls=pd.read_csv('URLs.txt')
+urls.head()
+
+# б)
+
+urls[urls.url.str.contains('/[0-9]{8}-', regex=True)].head()
+
+# Задание 3: Используйте файл с оценками фильмов ml-latest-small/ratings.csv. Посчитайте среднее время жизни пользователей, которые выставили более 100 оценок. 
+# Под временем жизни понимается разница между максимальным и минимальным значениями столбца timestamp для данного значения userId.
+
+import pandas as pd
+from pymystem3 import Mystem
+data = pd.DataFrame({
+    'keyword': ['курс гривны к рублю', 'доллары в рубли', '100 долларов в рублях', 'курс рубля'],
+    'shows': [125076, 114173, 97534, 53546],
+})
+def lemmas_function(row):
+    m=Mystem()
+    lemma = m.lemmatize(row['keyword'])
+    string = ' '.join(lemma)
+    return string
+data['lemmas']=data.apply(lemmas_function, axis=1)
+data
+
+# Задание 4: Дана статистика услуг перевозок клиентов компании по типам (см. файл “Python_13_join.ipynb” в разделе «Материалы для лекции “Продвинутый pandas”» ---- Ноутбуки к лекции «Продвинутый pandas»).
+# Нужно сформировать две таблицы:
+
+# таблицу с тремя типами выручки для каждого client_id без указания адреса клиента;
+# аналогичную таблицу по типам выручки с указанием адреса клиента.
+
+import pandas as pd
+
+rzd = pd.DataFrame(
+    {
+        'client_id': [111, 112, 113, 114, 115],
+        'rzd_revenue': [1093, 2810, 10283, 5774, 981]
+    }
+)
+auto = pd.DataFrame(
+    {
+        'client_id': [113, 114, 115, 116, 117],
+        'auto_revenue': [57483, 83, 912, 4834, 98]
+    }
+)
+air = pd.DataFrame(
+    {
+        'client_id': [115, 116, 117, 118],
+        'air_revenue': [81, 4, 13, 173]
+    }
+)
+client_base = pd.DataFrame(
+    {
+        'client_id': [111, 112, 113, 114, 115, 116, 117, 118],
+        'address': ['Комсомольская 4', 'Энтузиастов 8а', 'Левобережная 1а', 'Мира 14', 'ЗЖБИиДК 1',
+                    'Строителей 18', 'Панфиловская 33', 'Мастеркова 4']
+    }
+)
+
+revenue_data = client_base[['client_id']]
+revenue_data = revenue_data.merge(rzd, on='client_id', how='left')
+revenue_data = revenue_data.merge(auto, on='client_id', how='left')
+revenue_data = revenue_data.merge(air, on='client_id', how='left')
+
+revenue_data_with_address = revenue_data.copy()
+
+revenue_data_with_address['address'] = client_base['address']
+
+print(revenue_data)
+
+print(revenue_data_with_address)
+
+
+
