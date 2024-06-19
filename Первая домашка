@@ -34,18 +34,16 @@ urls[urls.url.str.contains('/[0-9]{8}-', regex=True)].head()
 # Под временем жизни понимается разница между максимальным и минимальным значениями столбца timestamp для данного значения userId.
 
 import pandas as pd
-from pymystem3 import Mystem
-data = pd.DataFrame({
-    'keyword': ['курс гривны к рублю', 'доллары в рубли', '100 долларов в рублях', 'курс рубля'],
-    'shows': [125076, 114173, 97534, 53546],
-})
-def lemmas_function(row):
-    m=Mystem()
-    lemma = m.lemmatize(row['keyword'])
-    string = ' '.join(lemma)
-    return string
-data['lemmas']=data.apply(lemmas_function, axis=1)
-data
+data = pd.read_csv("ratings.csv")
+ratings_count = data.groupby("userId").size().reset_index(name="count")
+filtered_users = ratings_count[ratings_count["count"] > 100]
+user_lifetime = data[data['userId'].isin(filtered_users['userId'])].groupby("userId").agg(
+    min_timestamp=("timestamp", "min"),
+    max_timestamp=("timestamp", "max")
+).reset_index()
+user_lifetime["lifetime"] = user_lifetime["max_timestamp"] - user_lifetime["min_timestamp"]
+print(user_lifetime)
+
 
 # Задание 4: Дана статистика услуг перевозок клиентов компании по типам (см. файл “Python_13_join.ipynb” в разделе «Материалы для лекции “Продвинутый pandas”» ---- Ноутбуки к лекции «Продвинутый pandas»).
 # Нужно сформировать две таблицы:
