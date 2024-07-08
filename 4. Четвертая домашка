@@ -1,0 +1,26 @@
+# Вам необходимо написать функцию, которая будет основана на поиске по сайту habr.com. Функция в качестве параметра должна принимать список запросов для поиска (например, ['python', 'анализ данных']) и на основе материалов, 
+# попавших в результаты поиска по каждому запросу, возвращать датафрейм вида:
+# <дата> - <заголовок> - <ссылка на материал>
+# В рамках задания предполагается работа только с одной (первой) страницей результатов поисковой выдачи для каждого запроса. Материалы в датафрейме не должны дублироваться, если они попадали в результаты поиска для нескольких запросов из списка.
+
+import requests
+keywords = ['скраппинг']
+import time
+import pandas as pd
+URL = 'https://habr.com/ru/search/?q=скраппинг&target_type=posts&order=relevance'
+from bs4 import BeautifulSoup
+pages = 1
+
+result_list = []
+req = requests.get(URL)
+time.sleep(0.3)
+soup = BeautifulSoup(req.text)
+news_blocks = soup.find_all('article', class_='tm-articles-list__item')
+articles_date = list(map(lambda x: x.find('span', class_='tm-article-snippet__datetime-published').find('time').get('title'), news_blocks))
+articles_title = list(map(lambda x: x.find('h2', class_='tm-article-snippet__title').find('span').get_text(), news_blocks))
+articles_text = list(map(lambda x: x.find('div', class_='article-formatted-body').get_text(), news_blocks))
+articles_link = list(map(lambda x: x.find('a', class_='tm-article-snippet__title-link').get('href'), news_blocks))
+result_list = result_list + list(zip(articles_date, articles_title, articles_text, articles_link))
+
+result_list
+
