@@ -1,0 +1,42 @@
+# Домашнее задание по теме «Spark SQL»
+#Выберите 15 стран с наибольшим процентом переболевших на 31 марта (в выходящем датасете необходимы колонки: iso_code, страна, процент переболевших)
+
+#Top 10 стран с максимальным зафиксированным кол-вом новых случаев за последнюю неделю марта 2021 в отсортированном порядке по убыванию
+#(в выходящем датасете необходимы колонки: число, страна, кол-во новых случаев)
+
+#Посчитайте изменение случаев относительно предыдущего дня в России за последнюю неделю марта 2021. (например: в россии вчера было 9150 , сегодня 8763, итог: -387) 
+#(в выходящем датасете необходимы колонки: число, кол-во новых случаев вчера, кол-во новых случаев сегодня, дельта)
+
+import pandas as pd
+
+df = pd.read_csv("covid-data.csv")
+df["yesterday_new_cases"] = df["new_cases"].shift(periods=1)
+
+
+
+df_end_of_march = df.loc[(df["date"] < '2021-04-01') & (~df["iso_code"].str.startswith('OWID_'))]
+df_end_of_march = df_end_of_march[['iso_code', 'location', 'total_cases']].groupby(['iso_code', 'location']).max('date').reset_index()
+total_cases = df_end_of_march["total_cases"].sum();
+df_end_of_march["percent_total_cases"] = 100 * df_end_of_march["total_cases"] / total_cases
+df_top15 = df_end_of_march[['iso_code', 'location', 'percent_total_cases']]
+
+df_top15 = df_top15.sort_values(by='percent_total_cases', ascending=False)
+print("Top 15 countries by percentage\n")
+print(df_top15.head(15))
+
+print(50*'-','\n\n\n')
+
+#top 10 new cases
+df_last_week = df.loc[(df["date"] > '2021-03-24')&(df["date"] < '2021-04-01') & (~df["iso_code"].str.startswith('OWID_'))]
+df_top10 = df_last_week[['iso_code', 'location', 'new_cases']].groupby(['iso_code', 'location']).sum('new_cases')
+df_top10 = df_top10.sort_values(by='new_cases', ascending=False)
+print("Top 10 countries by new cases in the last week of March\n")
+print(df_top10.head(10))
+
+print(50*'-','\n\n\n')
+
+
+df_rus = df.loc[(df["date"] > '2021-03-24') & (df["date"] < '2021-04-01') & (df["iso_code"] == 'RUS')][["date", "new_cases", "yesterday_new_cases"]]
+df_rus["diff"] = df_rus["new_cases"] - df_rus["yesterday_new_cases"]
+print("Сhange in new cases in the last week of March in Russia\n")
+print(df_rus.head(10))
